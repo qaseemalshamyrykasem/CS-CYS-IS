@@ -1,12 +1,20 @@
 import types
-import os
 import telebot
+
 API_TOKEN = '7267544351:AAH2hSDFBg_8bdxYBm58PolK26jKQbowHng'
 bot = telebot.TeleBot(API_TOKEN)
-API_TOKEN = os.getenv('API_TOKEN')
+
 # القاموس لتخزين بيانات البوت الرئيسي
 summaries = {
-    "🖥️ قسم علوم الحاسوب": {},
+    "🖥️ قسم علوم الحاسوب": {
+        'سنة أولى': {
+            'ترم أول': {
+                'مادة 1': {'ملخص': 'URL_to_summary_1', 'أسئلة': {'كويز 1': 'URL_to_quiz_1'}},
+                'مادة 2': {'ملخص': 'URL_to_summary_2', 'أسئلة': {'كويز 2': 'URL_to_quiz_2'}}
+            },
+            'ترم ثاني': {}
+        }
+    },
     "🔐 قسم الأمن السيبراني": {},
     "📊 قسم نظم المعلومات": {},
 }
@@ -61,12 +69,12 @@ def choose_term(call):
 @bot.callback_query_handler(func=lambda call: ':' in call.data and call.data.count(':') == 2)
 def choose_subject(call):
     department, year, term = call.data.split(':')
-    if term not in summaries[department][year]:
+    if term not in summaries[department].get(year, {}):
         bot.send_message(call.message.chat.id, "الترم غير متاح. حاول مرة أخرى.", parse_mode='Markdown')
         return
 
     markup = types.InlineKeyboardMarkup(row_width=2)
-    for subject in summaries[department][year][term].keys():
+    for subject in summaries[department][year].get(term, {}).keys():
         markup.add(types.InlineKeyboardButton(subject, callback_data=f'{department}:{year}:{term}:{subject}'))
     bot.edit_message_text(f"📚 *اختر المادة في {term}:*", call.message.chat.id, call.message.message_id, reply_markup=markup, parse_mode='Markdown')
 
@@ -74,7 +82,7 @@ def choose_subject(call):
 @bot.callback_query_handler(func=lambda call: ':' in call.data and call.data.count(':') == 3)
 def choose_summary_or_quizzes(call):
     department, year, term, subject = call.data.split(':')
-    if subject not in summaries[department][year][term]:
+    if subject not in summaries[department][year].get(term, {}):
         bot.send_message(call.message.chat.id, "المادة غير متاحة. حاول مرة أخرى.", parse_mode='Markdown')
         return
 
@@ -97,7 +105,7 @@ def choose_summary_or_quiz(call):
             bot.send_message(call.message.chat.id, "⚠️ ملخص غير متاح. حاول مرة أخرى.", parse_mode='Markdown')
     elif choice == 'كويزات':
         markup = types.InlineKeyboardMarkup(row_width=2)
-        quizzes = summaries[department][year][term][subject]['أسئلة']
+        quizzes = summaries[department][year][term][subject].get('أسئلة', {})
         for quiz in quizzes.keys():
             markup.add(types.InlineKeyboardButton(quiz, callback_data=f'{department}:{year}:{term}:{subject}:{quiz}'))
         bot.edit_message_text(f"❓ *اختر الكويز في {subject}:*", call.message.chat.id, call.message.message_id, reply_markup=markup, parse_mode='Markdown')
@@ -106,9 +114,12 @@ def choose_summary_or_quiz(call):
 @bot.callback_query_handler(func=lambda call: ':' in call.data and call.data.count(':') == 5)
 def send_quiz(call):
     department, year, term, subject, quiz_name = call.data.split(':')
-    file_url = summaries[department][year][term][subject]['أسئلة'][quiz_name]
-    bot.send_message(call.message.chat.id, f"🔄 جارٍ تحميل {quiz_name}...", parse_mode='Markdown')
-    bot.send_document(call.message.chat.id, file_url)
+    file_url = summaries[department][year][term][subject]['أسئلة'].get(quiz_name)
+    if file_url:
+        bot.send_message(call.message.chat.id, f"🔄 جارٍ تحميل {quiz_name}...", parse_mode='Markdown')
+        bot.send_document(call.message.chat.id, file_url)
+    else:
+        bot.send_message(call.message.chat.id, "⚠️ الكويز غير متاح. حاول مرة أخرى.", parse_mode='Markdown')
 
 # بدء البوت
 bot.polling()
