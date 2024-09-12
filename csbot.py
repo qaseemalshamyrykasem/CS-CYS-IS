@@ -4,6 +4,11 @@ from telebot import types
 
 # الحصول على التوكن من البيئة
 API_TOKEN = os.getenv('API_TOKEN')
+
+# التحقق من أن التوكن موجود
+if not API_TOKEN:
+    raise ValueError("API_TOKEN لم يتم تعيينه بشكل صحيح.")
+
 bot = telebot.TeleBot(API_TOKEN)
 
 # القاموس لتخزين بيانات البوت الرئيسي
@@ -12,19 +17,56 @@ summaries = {
         "سنة أولى": {
             "ترم أول": {
                 "مادة 1": {
-                    "ملخص": "رابط_الملخص_1.pdf",
+                    "ملخص": "https://example.com/CS_1st_year_term1_subject1_summary.pdf",
                     "أسئلة": {
-                        "كويز 1": "رابط_الكويز_1.pdf",
-                        "كويز 2": "رابط_الكويز_2.pdf",
+                        "كويز 1": "https://example.com/CS_1st_year_term1_subject1_quiz1.pdf",
+                        "كويز 2": "https://example.com/CS_1st_year_term1_subject1_quiz2.pdf"
                     }
                 },
-                # أضف مزيد من المواد هنا
+                # أضف المواد الأخرى
             },
-            # أضف مزيد من الفصول هنا
+            "ترم ثاني": {
+                # أضف المواد
+            }
         },
-        # أضف مزيد من السنوات هنا
+        # أضف السنوات الأخرى
     },
-    # أضف بقية الأقسام هنا
+    "🔐 قسم الأمن السيبراني": {
+        "سنة أولى": {
+            "ترم أول": {
+                "مادة 1": {
+                    "ملخص": "https://example.com/Cybersecurity_1st_year_term1_subject1_summary.pdf",
+                    "أسئلة": {
+                        "كويز 1": "https://example.com/Cybersecurity_1st_year_term1_subject1_quiz1.pdf",
+                        "كويز 2": "https://example.com/Cybersecurity_1st_year_term1_subject1_quiz2.pdf"
+                    }
+                },
+                # أضف المواد الأخرى
+            },
+            "ترم ثاني": {
+                # أضف المواد
+            }
+        },
+        # أضف السنوات الأخرى
+    },
+    "📊 قسم نظم المعلومات": {
+        "سنة أولى": {
+            "ترم أول": {
+                "مادة 1": {
+                    "ملخص": "https://example.com/IS_1st_year_term1_subject1_summary.pdf",
+                    "أسئلة": {
+                        "كويز 1": "https://example.com/IS_1st_year_term1_subject1_quiz1.pdf",
+                        "كويز 2": "https://example.com/IS_1st_year_term1_subject1_quiz2.pdf"
+                    }
+                },
+                # أضف المواد الأخرى
+            },
+            "ترم ثاني": {
+                # أضف المواد
+            }
+        },
+        # أضف السنوات الأخرى
+    },
 }
 
 # التعامل مع أمر /start
@@ -60,7 +102,7 @@ def choose_year(call):
     bot.edit_message_text(f"📅 *اختر السنة في {department}:*", call.message.chat.id, call.message.message_id, reply_markup=markup, parse_mode='Markdown')
 
 # التعامل مع اختيار السنة
-@bot.callback_query_handler(func=lambda call: ':' in call.data and not call.data.count(':') == 1)
+@bot.callback_query_handler(func=lambda call: ':' in call.data and call.data.count(':') == 1)
 def choose_term(call):
     department, year = call.data.split(':')
     if year not in summaries[department]:
